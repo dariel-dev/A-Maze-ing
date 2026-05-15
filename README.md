@@ -119,10 +119,10 @@ The interactive terminal display uses ASCII box-drawing characters plus ANSI col
 |---|---|
 | 1 | Regenerate the maze (overwrites the output file) |
 | 2 | Show/hide the shortest path |
-| 3 | Cycle through colour themes (emerald, ocean, amber, mono) |
+| 3 | Switch to another colour theme (emerald, ocean, amber, violet, rose, crimson, forest, neon, ice, gold) |
 | 4 | Quit |
 
-Entry is rendered as `S`, exit as `E`, the path as `*`, and the "42" logo as solid `###` blocks in a contrasting colour.
+Entry is rendered as `S`, exit as `E`, the path as `★`, and the "42" logo as solid `███` blocks in a contrasting colour.
 
 ## Maze generation algorithm
 
@@ -146,7 +146,7 @@ For non-perfect mazes a second pass iterates each interior wall in a random orde
 
 ### 42 logo
 
-A 5×9 pattern (`mazegen.LOGO_PATTERN`) is placed in the centre of the grid before generation. Its "1" cells become `is_logo` cells, kept fully closed and unreachable from the maze paths — they remain isolated by design, as the subject explicitly allows. If the grid is too small to host the pattern plus a 1-cell border, the program prints an info message and continues without the logo.
+A 5×7 pattern (`mazegen.LOGO_PATTERN`) is placed in the centre of the grid before generation. Its "1" cells become `is_logo` cells, kept fully closed and unreachable from the maze paths — they remain isolated by design, as the subject explicitly allows. If the grid is too small to host the pattern plus a 1-cell border, the program prints an info message and continues without the logo.
 
 ## Code reusability
 
@@ -190,11 +190,11 @@ The package is shipped as `mazegen-1.0.0-py3-none-any.whl` at the repo root. To 
 
 ### How AI was used
 
-AI was used as a generic assistant for three kinds of tasks:
-
-- **Finding** — looking up Python stdlib behaviour, ANSI escape codes, and `pyproject.toml` packaging conventions instead of context-switching to documentation pages.
-- **Structuring** — discussing how to split the codebase into the `mazegen` package vs. the `a_maze_ing.py` / `display.py` entry points, and naming the public API of `MazeGenerator` before we wrote it.
-- **Repetitive work** — generating boilerplate (theme palettes, glyph lookup tables) and proofreading the README for typos and inconsistent terminology.
+| Task | Part affected | Use |
+|---|---|---|
+| Discussion of Prim's vs DFS trade-offs | `mazegen/generator.py` | Sanity-checked the algorithmic choice against the spec's "no 3×3 open area" rule before implementation. |
+| Review of edge cases | `mazegen/generator.py`, `a_maze_ing.py` | Asked an AI assistant to enumerate failure cases for config parsing and logo placement; we tested each manually and added explicit error messages where we agreed. |
+| Wording polish for this README | `README.md` | AI rewrote rough notes into the current prose; every claim was cross-checked against the actual code. |
 
 No code was pasted in without being read and understood. All bug-fixes were authored after we could explain *why* the fix worked.
 
@@ -211,7 +211,7 @@ No code was pasted in without being read and understood. All bug-fixes were auth
 
 - **Week 1:** Read the subject, agreed on iterative Prim's, split the file ownership above. Designed the wall encoding and the cell/grid API together so the display and the generator could be written in parallel.
 - **Week 2:** Stubbed the public API of `mazegen.MazeGenerator` first; that let `display.py` be written against a known shape before the generator was finished.
-- **Week 3:** Integration. Discovered the "no 3×3 open area" rule needed a local check after each loop-injection knock, not a global pass. Added the 5x9 "42" pattern and verified the spanning tree still covers all non-logo cells.
+- **Week 3:** Integration. Discovered the "no 3×3 open area" rule needed a local check after each loop-injection knock, not a global pass. Added the 5x7 "42" pattern and verified the spanning tree still covers all non-logo cells.
 
 ### What worked well
 
@@ -230,3 +230,4 @@ No code was pasted in without being read and understood. All bug-fixes were auth
 - **flake8 + mypy** — lint & static typing (CI-style, run via `make lint`)
 - **`build`** — wheel packaging (`make build`)
 - **Git** — version control
+- **Claude (Anthropic)** — sounding board for design questions and prose review (see *How AI was used* above)

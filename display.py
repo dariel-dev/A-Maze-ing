@@ -286,7 +286,7 @@ def interactive(gen: "MazeGenerator", cfg: "Config") -> None:
         print(f"Logo: {logo_state}")
         print("1. Regenerate maze")
         print("2. Show/Hide path")
-        print("3. Change wall color")
+        print("3. Change maze wall colors")
         print("4. Quit")
         try:
             choice = input("Choice? (1-4): ").strip()
