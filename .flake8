@@ -1,0 +1,2 @@
+[flake8]
+exclude = maze_env,build,dist,.git,__pycache__,*.egg-info

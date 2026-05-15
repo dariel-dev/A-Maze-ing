@@ -1,0 +1,12 @@
+maze_env/
+__pycache__/
+*.pyc
+*.pyo
+.mypy_cache/
+.pytest_cache/
+build/
+dist/
+*.egg-info/
+.vscode/
+.idea/
+output_maze.txt
