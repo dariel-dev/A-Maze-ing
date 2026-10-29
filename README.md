@@ -57,6 +57,14 @@ make lint           # flake8 + mypy with the required flags
 make lint-strict    # flake8 + mypy --strict
 ```
 
+### Testing
+
+```bash
+make test
+```
+
+Runs the unit tests in `tests/` using the Python unittest framework.
+
 ### Cleaning
 
 ```bash

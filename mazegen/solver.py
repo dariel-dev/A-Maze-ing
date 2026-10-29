@@ -41,12 +41,27 @@ def _bfs(
     raise ValueError(f"no path from {start} to {goal}")
 
 
+def _validate_endpoints(
+    grid: Grid,
+    start: tuple[int, int],
+    goal: tuple[int, int],
+) -> None:
+    """Reject path endpoints outside the grid."""
+    for x, y in (start, goal):
+        if not grid.in_bounds(x, y):
+            raise ValueError(
+                f"cell coordinates ({x},{y}) are outside grid bounds "
+                f"{grid.width}x{grid.height}"
+            )
+
+
 def shortest_path(
     grid: Grid,
     start: tuple[int, int],
     goal: tuple[int, int],
 ) -> str:
     """Return the BFS shortest path from *start* to *goal* as letters."""
+    _validate_endpoints(grid, start, goal)
     if start == goal:
         return ""
     parent = _bfs(grid, start, goal)
@@ -68,6 +83,7 @@ def path_coords(
     goal: tuple[int, int],
 ) -> list[tuple[int, int]]:
     """Return the BFS shortest path as a list of (x, y) cells inclusive."""
+    _validate_endpoints(grid, start, goal)
     if start == goal:
         return [start]
     parent = _bfs(grid, start, goal)

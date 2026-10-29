@@ -3,10 +3,10 @@ PYTHON   := $(VENV)/bin/python
 PIP      := $(VENV)/bin/pip
 WHEEL    := mazegen-1.0.0-py3-none-any.whl
 
-.PHONY: install run debug clean lint lint-strict build help start
+.PHONY: install run debug clean lint lint-strict build test help start
 
 help:
-	@echo "Targets: install run debug clean lint lint-strict build start"
+	@echo "Targets: install run debug clean lint lint-strict build test start"
 
 start:
 	python3 a_maze_ing.py config.txt
@@ -41,3 +41,6 @@ clean:
 	rm -rf $(VENV) build dist *.egg-info
 	find . -type d -name __pycache__ -exec rm -rf {} +
 	find . -type d -name .mypy_cache -exec rm -rf {} +
+
+test: install
+	$(VENV)/bin/python -m unittest discover -s tests -v

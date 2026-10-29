@@ -98,13 +98,20 @@ class Grid:
         return 0 <= x < self.width and 0 <= y < self.height
 
     def cell(self, x: int, y: int) -> Cell:
-        """Return the cell at (x, y)."""
+        """Return the cell at (x, y), rejecting out-of-bounds coordinates."""
+        if not self.in_bounds(x, y):
+            raise ValueError(
+                f"cell coordinates ({x},{y}) are outside grid bounds "
+                f"{self.width}x{self.height}"
+            )
         return self.cells[y][x]
 
     def neighbour(
         self, x: int, y: int, d: Direction
     ) -> tuple[int, int] | None:
         """Return the cell adjacent to (x, y) in direction *d*, or None."""
+        if not self.in_bounds(x, y):
+            return None
         dx, dy = vector(d)
         nx, ny = x + dx, y + dy
         return (nx, ny) if self.in_bounds(nx, ny) else None
