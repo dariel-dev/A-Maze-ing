@@ -1,241 +1,273 @@
-*This activity has been created as part of the 42 curriculum by ddervish, dshabani.*
+*This project was developed as part of the 42 curriculum by `ddervish` and `dshabani`.*
+
+<div align="center">
 
 # A-Maze-ing
 
-A Python maze generator with an interactive terminal renderer. The program reads a configuration file, generates a maze (perfect or non-perfect), writes the spec-compliant output file with the BFS shortest path, and lets you explore the result in your terminal.
+**An interactive Python maze generator powered by randomized Prim's algorithm and Breadth-First Search.**
 
-## Description
+[![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?style=flat-square&logo=python&logoColor=white)](https://www.python.org/)
+![Algorithms](https://img.shields.io/badge/Algorithms-Prim's%20%2B%20BFS-7C3AED?style=flat-square)
+![Interface](https://img.shields.io/badge/Interface-Terminal-00897B?style=flat-square)
+![42](https://img.shields.io/badge/42-Curriculum-000000?style=flat-square)
 
-`a_maze_ing.py` builds mazes using an iterative randomised **Prim's algorithm** over the grid's cells. A "42" pattern is reserved at the centre as fully-closed cells and the algorithm grows the spanning tree around it. In non-perfect mode an extra pass randomly removes additional walls while preserving the "no 3×3 open area" rule of the subject. The result is always:
+</div>
 
-- bordered (outer walls always closed);
-- wall-coherent (neighbouring cells agree on every shared wall);
-- fully connected over non-logo cells;
-- equipped with a BFS-computed shortest path from entry to exit.
+## Table of Contents
 
-The reusable generator code lives in the standalone `mazegen/` package, packaged as `mazegen-1.0.0-py3-none-any.whl` at the repository root so it can be `pip install`'d directly into any future project.
+- [Overview](#overview)
+- [Visual Showcase](#visual-showcase)
+- [Core Features](#core-features)
+- [Technical Architecture](#technical-architecture)
+- [Maze Generation Algorithm](#maze-generation-algorithm)
+- [Installation and Usage](#installation-and-usage)
+- [Configuration](#configuration)
+- [Output File Format](#output-file-format)
+- [Reusable Python Package](#reusable-python-package)
+- [Development and Quality Checks](#development-and-quality-checks)
+- [Repository Structure](#repository-structure)
+- [Team and Project Management](#team-and-project-management)
+- [Tools and Technologies](#tools-and-technologies)
+- [References](#references)
+- [Use of AI](#use-of-ai)
 
-## Instructions
+## Overview
+
+A-Maze-ing is a Python-based maze generation and exploration project developed as part of the 42 curriculum. It combines randomized maze generation, graph traversal and an interactive terminal interface in a single application. The program reads a configuration file, constructs either a perfect or non-perfect maze, calculates the shortest route between the entrance and exit using Breadth-First Search (BFS), and writes the result to the required output format.
+
+The project separates the core maze-generation logic from the interactive interface. The reusable `mazegen` package handles the maze structure, generation, solving and serialization, while `a_maze_ing.py` and `display.py` provide configuration handling and terminal interaction. This separation makes the generation logic reusable independently of the visual interface.
+
+## Visual Showcase
+
+### 1. Maze Generation
+
+<p align="center">
+  <img src="docs/screenshots/01-maze-overview.png" alt="Generated maze displayed in the terminal" width="760">
+</p>
+
+The first screenshot presents a generated maze in the interactive terminal renderer. It demonstrates the resulting grid structure, including the closed outer boundaries, the entrance and exit positions, and the protected 42 pattern at the centre when the grid dimensions allow it. The maze is generated through randomized Prim's algorithm, which progressively connects cells by removing selected walls while preserving the required structural constraints.
+
+### 2. Shortest-Path Visualization
+
+<p align="center">
+  <img src="docs/screenshots/02-shortest-path.png" alt="Maze with its BFS shortest path highlighted" width="760">
+</p>
+
+This view demonstrates the shortest-path solving functionality. Breadth-First Search explores the maze from the entrance until it reaches the exit, determining a shortest route through the available passages. The resulting path is displayed directly in the terminal using a highlighted marker, making the relationship between the generated maze structure and graph traversal visible. The solution is also represented in the output file using directional instructions (`N`, `E`, `S`, and `W`).
+
+### 3. Interactive Colour Themes
+
+<p align="center">
+  <img src="docs/screenshots/03-maze-theme.png" alt="Maze displayed with an alternative terminal colour theme" width="760">
+</p>
+
+The third screenshot highlights the terminal renderer's theme-switching functionality. Users can change the visual palette without needing to modify the maze-generation algorithm. The renderer uses ANSI colour sequences and box-drawing characters to distinguish maze elements, including the entrance, exit, shortest path and central logo. Multiple themes are available, allowing the same application to be displayed with different visual styles.
+
+## Core Features
+
+The project supports both perfect and non-perfect maze generation. A perfect maze is constructed as a spanning tree over all non-logo cells, meaning there is exactly one valid route between any two connected cells. In non-perfect mode, an additional randomized wall-removal pass introduces loops while preserving the subject's restriction against creating a completely open 3×3 cell block.
+
+The generated maze maintains closed outer boundaries and consistent shared walls between neighbouring cells. All non-logo cells remain connected, and the shortest path between the configured entrance and exit is calculated using BFS. An optional integer seed makes generation reproducible, allowing the same configuration and seed to produce the same randomized result.
+
+A distinctive feature is the protected 42 pattern placed in the centre of the maze. The pattern is represented by a 5×7 layout, with designated logo cells remaining fully closed and excluded from the maze's passages. If the grid is too small to accommodate the pattern together with its required surrounding border, the program continues without placing the logo and displays an informational message.
+
+## Technical Architecture
+
+The project is organized around a reusable maze-generation package and a separate application layer. The `mazegen/` package contains the grid representation, randomized generation, path solving and output serialization. The main entry point, `a_maze_ing.py`, coordinates configuration loading, generation and the interactive application flow, while `display.py` is responsible for rendering the maze and handling its visual presentation.
+
+The package is designed to be imported independently, without requiring the terminal interface or main application script. This makes it possible to use the maze-generation and solving functionality in other Python projects.
+
+The repository also includes a prebuilt Python wheel, `mazegen-1.0.0-py3-none-any.whl`, which can be installed into another environment and reused as a standalone package.
+
+## Maze Generation Algorithm
+
+### Randomized Prim's Algorithm
+
+Perfect mazes are generated using an iterative implementation of randomized Prim's algorithm. The process begins by marking the entrance cell as part of the growing maze and adding its neighbouring walls to a frontier list. At each iteration, a random frontier wall is selected. If the cell on the opposite side has not yet been included in the maze and is not a protected logo cell, the wall is removed and the new cell is added to the growing structure. Its eligible neighbouring walls are then added to the frontier.
+
+This process continues until the frontier is empty. The resulting structure is a spanning tree over the non-logo cells, producing a connected perfect maze with a unique route between any two reachable cells. The iterative implementation avoids recursive calls and therefore does not depend on increasing Python's recursion limit for larger mazes.
+
+### Non-Perfect Maze Generation
+
+When non-perfect generation is selected, the program performs an additional pass over the interior walls in randomized order. Each candidate wall is considered for removal according to the configured loop probability. Before accepting a removal, the program checks whether it would create a fully open 3×3 cell block. Any change that violates this condition is rejected, preserving the required maze constraint while allowing additional routes and loops.
+
+### The 42 Pattern
+
+The central logo is defined by `mazegen.LOGO_PATTERN` as a 5×7 pattern. Its designated cells are marked as protected before maze generation begins. These cells remain fully closed and are never added to the algorithm's frontier, ensuring that the maze passages do not carve through the logo.
+
+## Installation and Usage
 
 ### Requirements
 
-- Python 3.10 or later.
-- A POSIX terminal that understands 24-bit ANSI colour escapes.
+The project requires Python 3.10 or later and a POSIX-compatible terminal that supports 24-bit ANSI colour escape sequences.
 
 ### Installation
+
+Clone the repository and install the project dependencies and reusable package with:
 
 ```bash
 make install
 ```
 
-This creates `maze_env/`, upgrades `pip`, installs `flake8`, `mypy`, `build`, and then `pip install`s `mazegen-1.0.0-py3-none-any.whl` from the repo root.
+This command creates the `maze_env/` virtual environment, upgrades `pip`, installs the development tools (`flake8`, `mypy` and `build`), and installs the prebuilt `mazegen` wheel from the repository root.
 
-### Running
+### Running the Application
+
+The application can be launched using the default configuration:
 
 ```bash
-make run                       # uses config.txt
-# or directly:
+make run
+```
+
+Alternatively, it can be started directly with Python:
+
+```bash
 python3 a_maze_ing.py config.txt
-# or with a different filename:
+```
+
+A different configuration file can also be supplied:
+
+```bash
 python3 a_maze_ing.py my_other_config.txt
 ```
 
-The maze is written to the file named by `OUTPUT_FILE` on the first generation and on every subsequent regeneration from the menu.
+The output file is generated on the first run and updated whenever the maze is regenerated through the interactive menu.
 
-### Debug mode
+### Interactive Controls
 
-```bash
-make debug
-```
+The terminal menu provides four main actions. Option `1` generates another maze and updates the output file, while option `2` toggles the visibility of the shortest path. Option `3` switches between the available colour themes: emerald, ocean, amber, violet, rose, crimson, forest, neon, ice and gold. Option `4` exits the application.
 
-Launches the script under `pdb`.
+The renderer uses `S` to represent the entrance, `E` for the exit, `★` for the shortest path and solid `███` blocks for the central 42 logo. These elements are visually distinguished through the selected terminal colour theme.
 
-### Linting
+## Configuration
 
-```bash
-make lint           # flake8 + mypy with the required flags
-make lint-strict    # flake8 + mypy --strict
-```
-
-### Testing
-
-```bash
-make test
-```
-
-Runs the unit tests in `tests/` using the Python unittest framework.
-
-### Cleaning
-
-```bash
-make clean
-```
-
-Removes `maze_env/`, `build/`, `dist/`, `__pycache__/`, and `.mypy_cache/`.
-
-### Rebuilding the wheel
-
-```bash
-make build
-```
-
-Produces a fresh `mazegen-1.0.0-py3-none-any.whl` at the repo root from the current `mazegen/` sources.
-
-## Configuration file
-
-The complete structure and format of the config file:
+The application reads its generation parameters from a plain-text configuration file. The default `config.txt` is included at the repository root, and alternative configuration files can be supplied when launching the program.
 
 | Key | Type | Required | Example |
 |---|---|---|---|
-| `WIDTH` | positive integer | yes | `WIDTH=20` |
-| `HEIGHT` | positive integer | yes | `HEIGHT=15` |
-| `ENTRY` | `x,y` integers | yes | `ENTRY=0,0` |
-| `EXIT` | `x,y` integers | yes | `EXIT=19,14` |
-| `OUTPUT_FILE` | string | yes | `OUTPUT_FILE=output_maze.txt` |
-| `PERFECT` | `True` or `False` | yes | `PERFECT=True` |
-| `SEED` | integer (optional) | no | `SEED=42` |
+| `WIDTH` | Positive integer | Yes | `WIDTH=20` |
+| `HEIGHT` | Positive integer | Yes | `HEIGHT=15` |
+| `ENTRY` | `x,y` coordinates | Yes | `ENTRY=0,0` |
+| `EXIT` | `x,y` coordinates | Yes | `EXIT=19,14` |
+| `OUTPUT_FILE` | String | Yes | `OUTPUT_FILE=output_maze.txt` |
+| `PERFECT` | `True` or `False` | Yes | `PERFECT=True` |
+| `SEED` | Integer | No | `SEED=42` |
 
-Rules:
+Each configuration entry follows the `KEY=VALUE` format, with one pair per line. Lines beginning with `#` are treated as comments, and blank lines are ignored. Whitespace around the equals sign is permitted. The entrance and exit must refer to different cells within the grid, and neither position may overlap the protected 42 pattern.
 
-- One `KEY=VALUE` pair per line.
-- Lines beginning with `#` are comments; blank lines are ignored.
-- Whitespace around `=` is allowed.
-- `ENTRY` and `EXIT` must be different cells, both inside the grid, neither overlapping the "42" pattern.
-- Empty `SEED` (or omitted line) → random RNG seed. Any non-empty integer → reproducible run.
+The `SEED` parameter is optional. When it is omitted or left empty, the generator uses a random seed. Providing an integer seed makes the generation reproducible, which is useful for testing and debugging.
 
-A complete `config.txt` is committed at the repository root.
+## Output File Format
 
-## Output file format
+The generated output file follows the format required by the project subject and is accepted by the accompanying `output_validator.py` script.
 
-```
-<hex-row 0>\n
-<hex-row 1>\n
+```text
+<hex-row 0>
+<hex-row 1>
 ...
-\n
-<entry-x>,<entry-y>\n
-<exit-x>,<exit-y>\n
-<path string of N/E/S/W>\n
+
+<entry-x>,<entry-y>
+<exit-x>,<exit-y>
+<path string of N/E/S/W>
 ```
 
-Each cell is one hex digit. Bit 0 = N, 1 = E, 2 = S, 3 = W; a set bit means the wall is closed. Every line, including the last, ends with `\n`. The output is accepted by the `output_validator.py` script shipped alongside the subject.
+Each maze row is serialized as hexadecimal values, with one hexadecimal digit representing each cell. The four lowest bits encode the cell's north, east, south and west walls respectively: bit 0 represents north, bit 1 east, bit 2 south and bit 3 west. A set bit indicates that the corresponding wall is closed.
 
-## Visual display & controls
+After the maze rows, the file contains the entrance coordinates, exit coordinates and shortest-path direction string. Every line, including the final line, ends with a newline character. This serialization keeps the generated grid and its calculated solution in the required subject-compatible format.
 
-The interactive terminal display uses ASCII box-drawing characters plus ANSI colour. From the menu you can:
+## Reusable Python Package
 
-| Choice | Action |
-|---|---|
-| 1 | Regenerate the maze (overwrites the output file) |
-| 2 | Show/hide the shortest path |
-| 3 | Switch to another colour theme (emerald, ocean, amber, violet, rose, crimson, forest, neon, ice, gold) |
-| 4 | Quit |
+The maze-generation functionality is exposed through the standalone `mazegen` package. Its public interface provides access to the generator, grid and cell structures, shortest-path calculation and output serialization. Because it does not depend on `display.py` or `a_maze_ing.py`, the package can be reused in other applications without importing the interactive terminal interface.
 
-Entry is rendered as `S`, exit as `E`, the path as `★`, and the "42" logo as solid `███` blocks in a contrasting colour.
-
-## Maze generation algorithm
-
-**Iterative randomised Prim's** is used for the perfect-maze build.
-
-- Reserve all "42" logo cells (`is_logo = True`); never carve into them.
-- Mark the entry cell as in-tree, push every wall to neighbours of the entry to the frontier list.
-- While the frontier is non-empty:
-  - Pop a *random* wall from the frontier.
-  - If the cell on the far side is not yet in-tree and is not part of the logo, carve that wall and add the new cell's outgoing walls to the frontier.
-- The result is a spanning tree over the non-logo cells — one unique path between any two of them.
-
-For non-perfect mazes a second pass iterates each interior wall in a random order and, with probability `loop_probability`, tries to remove it. The change is committed only when no 3×3 cell block becomes fully open after the removal.
-
-### Why Prim's?
-
-- **No recursion limit issues** — fully iterative, fine for large mazes (the recursive backtracker used by other implementations needs `sys.setrecursionlimit` bumps).
-- **Naturally compatible with reserved cells**: protected (logo) cells are simply never added to the frontier.
-- **Random-uniform wall selection** produces visually busier, less "snake-like" mazes than recursive DFS, which is interesting for the visualisation step.
-- **Easy to seed** — pass an integer `SEED` and the same maze is reconstructed deterministically (the RNG state is the only source of non-determinism).
-
-### 42 logo
-
-A 5×7 pattern (`mazegen.LOGO_PATTERN`) is placed in the centre of the grid before generation. Its "1" cells become `is_logo` cells, kept fully closed and unreachable from the maze paths — they remain isolated by design, as the subject explicitly allows. If the grid is too small to host the pattern plus a 1-cell border, the program prints an info message and continues without the logo.
-
-## Code reusability
-
-The maze logic is exposed through the `mazegen` package and is fully importable without depending on `display.py` or `a_maze_ing.py`.
+For example, another Python project can create and solve a maze using the following interface:
 
 ```python
 from mazegen import MazeGenerator, write_output
 
 gen = MazeGenerator(
-    width=20, height=15,
-    entry=(0, 0), exit_pt=(19, 14),
-    perfect=True, seed=42,
+    width=20,
+    height=15,
+    entry=(0, 0),
+    exit_pt=(19, 14),
+    perfect=True,
+    seed=42,
 )
+
 gen.generate()
 
-# Access the structure
-grid = gen.grid                       # mazegen.Grid
-cell = grid.cell(3, 5)                # mazegen.Cell
+# Access the generated grid
+grid = gen.grid
+cell = grid.cell(3, 5)
+
 print(cell.walls, cell.is_logo)
 
-# Access a solution
-print(gen.solution())                 # "NESW..." string
+# Retrieve the shortest solution
+solution = gen.solution()
+print(solution)
 
-# Serialise to the spec output format
-write_output("maze.txt", grid, gen.entry, gen.exit, gen.solution())
+# Serialize the maze
+write_output("maze.txt", grid, gen.entry, gen.exit, solution)
 ```
 
-The package is shipped as `mazegen-1.0.0-py3-none-any.whl` at the repo root. To reinstall it in any other virtualenv: `pip install mazegen-1.0.0-py3-none-any.whl`. To rebuild it from the source under `mazegen/`: `make build`.
+The prebuilt package is available at the repository root as `mazegen-1.0.0-py3-none-any.whl`. It can be installed into another Python virtual environment using `pip install mazegen-1.0.0-py3-none-any.whl`. To rebuild the wheel from the source under `mazegen/`, run `make build`.
 
-## Resources
+## Development and Quality Checks
 
-### References
+The repository includes a Makefile to simplify common development tasks. Run `make debug` to launch the application under Python's debugger (`pdb`). Run `make test` to execute the unit tests in `tests/` using Python's built-in `unittest` framework.
 
-- *Maze generation algorithm — Prim's* — <https://en.wikipedia.org/wiki/Maze_generation_algorithm#Randomized_Prim's_algorithm>
-- *Breadth-first search* — <https://en.wikipedia.org/wiki/Breadth-first_search>
-- *Spanning tree* — <https://en.wikipedia.org/wiki/Spanning_tree>
-- *PEP 257 — docstring conventions* — <https://peps.python.org/pep-0257/>
-- *flake8* — <https://flake8.pycqa.org/>
-- *mypy* — <https://mypy.readthedocs.io/>
-- *Python packaging tutorial* — <https://packaging.python.org/en/latest/tutorials/packaging-projects/>
+Code quality can be checked with `make lint`, which runs `flake8` and `mypy` using the required project flags. For more restrictive static checking, `make lint-strict` runs the tools with strict mypy settings. The command `make clean` removes generated development artefacts such as the virtual environment, build and distribution directories, Python cache folders and mypy cache. Finally, `make build` creates a fresh wheel from the package source.
 
-### How AI was used
+## Repository Structure
 
-| Task | Part affected | Use |
-|---|---|---|
-| Discussion of Prim's vs DFS trade-offs | `mazegen/generator.py` | Sanity-checked the algorithmic choice against the spec's "no 3×3 open area" rule before implementation. |
-| Review of edge cases | `mazegen/generator.py`, `a_maze_ing.py` | Asked an AI assistant to enumerate failure cases for config parsing and logo placement; we tested each manually and added explicit error messages where we agreed. |
-| Wording polish for this README | `README.md` | AI rewrote rough notes into the current prose; every claim was cross-checked against the actual code. |
+```text
+A-Maze-ing/
+├── a_maze_ing.py
+├── display.py
+├── config.txt
+├── Makefile
+├── mazegen/
+├── tests/
+├── docs/
+│   └── screenshots/
+│       ├── 01-maze-overview.png
+│       ├── 02-shortest-path.png
+│       └── 03-maze-theme.png
+├── mazegen-1.0.0-py3-none-any.whl
+└── README.md
+```
 
-No code was pasted in without being read and understood. All bug-fixes were authored after we could explain *why* the fix worked.
+The repository keeps the application entry point, terminal display, reusable package, tests, configuration and documentation assets in separate locations. The screenshots used in this README are stored locally under `docs/screenshots/` and referenced through relative paths, so they are displayed directly from the repository without external image hosting.
 
-## Team & project management
+## Team and Project Management
 
-### Roles
+### Contributions
 
-| Member | Responsibility |
-|---|---|
-| ddervish | `mazegen/` package (grid, generator, solver, serialiser), wheel packaging, output format compliance |
-| dshabani | `a_maze_ing.py`, `display.py`, themes, interactive loop, configuration parsing, README & Makefile |
+The project was developed collaboratively, with responsibilities divided between the reusable generation package and the interactive application. `ddervish` was responsible for the `mazegen/` package, including the grid, generator, solver and serializer, as well as wheel packaging and output-format compliance. `dshabani` worked on `a_maze_ing.py`, `display.py`, terminal themes, the interactive loop, configuration parsing, the README and the Makefile.
 
-### Planning and how it evolved
+### Development Process
 
-- **Week 1:** Read the subject, agreed on iterative Prim's, split the file ownership above. Designed the wall encoding and the cell/grid API together so the display and the generator could be written in parallel.
-- **Week 2:** Stubbed the public API of `mazegen.MazeGenerator` first; that let `display.py` be written against a known shape before the generator was finished.
-- **Week 3:** Integration. Discovered the "no 3×3 open area" rule needed a local check after each loop-injection knock, not a global pass. Added the 5x7 "42" pattern and verified the spanning tree still covers all non-logo cells.
+During the first week, the team reviewed the subject requirements, selected iterative randomized Prim's algorithm and agreed on the division of responsibilities. The wall encoding and cell/grid interfaces were designed together so that the display and generation components could be developed in parallel.
 
-### What worked well
+During the second week, the public interface of `mazegen.MazeGenerator` was established early. This allowed the terminal display to be developed against a defined package interface before the generation implementation was fully completed.
 
-- Defining the public surface of `MazeGenerator` early, so both halves of the project could integrate cleanly.
-- Producing the spec output format from the `Grid` itself rather than from internal state — the same function works for any maze, including ones produced by hand.
-- Picking an iterative algorithm — we never had to fight Python's recursion limit.
+The third week focused on integration and validation. During this stage, the team identified that the restriction against fully open 3×3 areas needed to be checked locally after each attempted loop creation. The central 5×7 42 pattern was also integrated, and the spanning-tree connectivity of the remaining maze cells was verified.
 
-### What could be improved
+### Lessons Learned
 
-- The interactive display is single-window; a multi-pane TUI (e.g. via `curses`) would let us show stats alongside the maze.
-- We could add more algorithms (Kruskal's, Wilson's) selectable from the config file.
+Defining the public interface of `MazeGenerator` early made integration between the two main parts of the project more straightforward. Producing the subject-compliant output directly from the `Grid` structure also made serialization independent of the internal state of the application. Choosing an iterative algorithm avoided recursion-limit issues and provided a straightforward approach to handling protected cells.
 
-### Tools used
+There are also areas that could be expanded in future versions. The current terminal display uses a single-window layout; a multi-pane terminal interface, potentially using `curses`, could make it possible to display additional maze statistics alongside the generated grid. The project could also be extended with alternative generation algorithms, such as Kruskal's algorithm or Wilson's algorithm, allowing users to compare different maze-generation approaches.
 
-- **Python 3.12** — language runtime
-- **flake8 + mypy** — lint & static typing (CI-style, run via `make lint`)
-- **`build`** — wheel packaging (`make build`)
-- **Git** — version control
-- **Claude (Anthropic)** — sounding board for design questions and prose review (see *How AI was used* above)
+## Tools and Technologies
+
+The project uses Python 3.12 as its primary development runtime, with Python 3.10 or later supported. `flake8` and `mypy` are used for linting and static type checking, while the `build` package is used to create the distributable wheel. Git provides version control, and Claude (Anthropic) was used as a sounding board for selected design discussions and README wording review.
+
+## References
+
+The implementation and development process drew on the following technical resources: [Randomized Prim's algorithm](https://en.wikipedia.org/wiki/Maze_generation_algorithm#Randomized_Prim's_algorithm), [Breadth-First Search](https://en.wikipedia.org/wiki/Breadth-first_search), [Spanning Trees](https://en.wikipedia.org/wiki/Spanning_tree), [PEP 257 — Docstring Conventions](https://peps.python.org/pep-0257/), the [flake8 documentation](https://flake8.pycqa.org/), the [mypy documentation](https://mypy.readthedocs.io/) and the [Python Packaging User Guide](https://packaging.python.org/en/latest/tutorials/packaging-projects/).
+
+## Use of AI
+
+AI assistance was used selectively during the project. It supported discussions about the trade-offs between Prim's algorithm and depth-first search, helped identify potential edge cases in configuration parsing and logo placement, and assisted with polishing the README's wording. The suggestions were reviewed against the project requirements and implementation, and relevant cases were checked manually.
+
+No code was pasted into the project without being read and understood. Bug fixes were authored after the underlying problem and the reasoning behind the solution had been understood.
